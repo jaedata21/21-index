@@ -520,36 +520,15 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
   </section>
 
   <div class="preview-section">
-    <div class="preview-grid" id="home-preview-grid">
-      <div class="pi" style="aspect-ratio:4/5;" onclick="nav('portfolio')">
-        <img src="https://images.unsplash.com/photo-1581952976147-5a2d15560349?w=900&q=80" alt="Family">
-        <div class="pi-ov"><span class="pi-label">Family</span></div>
-      </div>
-      <div class="pi" style="aspect-ratio:3/4;" onclick="nav('portfolio')">
-        <img src="https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=600&q=80" alt="Newborn">
-        <div class="pi-ov"><span class="pi-label">Newborn</span></div>
-      </div>
-      <div class="pi" style="aspect-ratio:3/4;" onclick="nav('portfolio')">
-        <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80" alt="Portrait">
-        <div class="pi-ov"><span class="pi-label">Portrait</span></div>
-      </div>
-      <div class="pi" style="aspect-ratio:3/4;" onclick="nav('portfolio')">
-        <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80" alt="Couples">
-        <div class="pi-ov"><span class="pi-label">Couples</span></div>
-      </div>
-      <div class="pi" style="aspect-ratio:3/4;" onclick="nav('portfolio')">
-        <img src="https://images.unsplash.com/photo-1609220136736-443140cffec6?w=600&q=80" alt="Newborn">
-        <div class="pi-ov"><span class="pi-label">Newborn</span></div>
-      </div>
-    </div>
+    <div class="preview-grid" id="home-preview-grid"></div>
     <div class="view-all-link reveal" onclick="nav('portfolio')"><span>View Full Portfolio</span></div>
   </div>
 
-  <div class="stats-row">
-    <div class="stat reveal"><div class="stat-n">500+</div><div class="stat-l">Sessions Photographed</div></div>
-    <div class="stat reveal" style="transition-delay:.1s"><div class="stat-n">4</div><div class="stat-l">Photography Specialties</div></div>
-    <div class="stat reveal" style="transition-delay:.2s"><div class="stat-n">48hr</div><div class="stat-l">Gallery Delivery</div></div>
-    <div class="stat reveal" style="transition-delay:.3s"><div class="stat-n">100%</div><div class="stat-l">Client Satisfaction</div></div>
+  <div class="stats-row" id="home-stats-row">
+    <div class="stat reveal"><div class="stat-n" id="stat-n-0">Now</div><div class="stat-l" id="stat-l-0">Booking Sessions</div></div>
+    <div class="stat reveal" style="transition-delay:.1s"><div class="stat-n" id="stat-n-1">4</div><div class="stat-l" id="stat-l-1">Photography Specialties</div></div>
+    <div class="stat reveal" style="transition-delay:.2s"><div class="stat-n" id="stat-n-2">48hr</div><div class="stat-l" id="stat-l-2">Gallery Delivery</div></div>
+    <div class="stat reveal" style="transition-delay:.3s"><div class="stat-n" id="stat-n-3">100%</div><div class="stat-l" id="stat-l-3">Client Satisfaction</div></div>
   </div>
 
   <div class="full-bleed">
@@ -735,7 +714,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         <li>Images may be used for 21 Studios marketing</li>
         <li>Perfect for individuals building a portfolio</li>
       </ul>
-      <a class="sess-btn" href="https://pixieset.com" target="_blank" data-cms="pix-url">Book This Session</a>
+      <a class="sess-btn" href="https://pixieset.com" target="_blank" data-cms="pix-url-model">Book This Session</a>
     </div>
     <div class="sess-card reveal" style="transition-delay:.1s">
       <div class="sess-badge">Portfolio Building Session</div>
@@ -748,7 +727,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         <li>Option to purchase additional edited images</li>
         <li>Full personal usage rights for all images</li>
       </ul>
-      <a class="sess-btn" href="https://pixieset.com" target="_blank" data-cms="pix-url">Book This Session</a>
+      <a class="sess-btn" href="https://pixieset.com" target="_blank" data-cms="pix-url-portfolio">Book This Session</a>
     </div>
   </div>
   <p class="sess-note reveal">All sessions are booked through Pixieset. A 25% deposit is required at time of booking. Remaining balance due on session day. Cancellations within 48 hours forfeit deposit.</p>
@@ -956,10 +935,43 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
           <p style="font-size:.52rem;color:rgba(245,243,239,.25);margin-top:12px;letter-spacing:.1em;">Click an image to replace it with your own photo</p>
         </div>
         <div class="content-card">
-          <div class="content-card-title">Booking Link</div>
-          <div class="content-card-desc">Update your Pixieset booking URL</div>
-          <div class="form-g"><label class="form-lbl">Pixieset Booking URL</label><input class="form-ctrl" id="cms-pix-url" value="https://pixieset.com"></div>
-          <button class="abtn abtn-p" onclick="savePixURL()">Update Booking Link</button>
+          <div class="content-card-title">Booking Links</div>
+          <div class="content-card-desc">Set separate booking URLs for each session type</div>
+          <div class="form-g">
+            <label class="form-lbl">Model Call Session — Booking URL ($75)</label>
+            <input class="form-ctrl" id="cms-pix-model" placeholder="https://pixieset.com/your-model-call-link">
+          </div>
+          <div class="form-g">
+            <label class="form-lbl">Portfolio Building Session — Booking URL ($150)</label>
+            <input class="form-ctrl" id="cms-pix-portfolio" placeholder="https://pixieset.com/your-portfolio-link">
+          </div>
+          <p style="font-size:.55rem;color:rgba(245,243,239,.3);margin-bottom:16px;letter-spacing:.06em;">These also update the nav "Book Your Session" button (uses Model Call URL)</p>
+          <button class="abtn abtn-p" onclick="saveBookingURLs()">Update Booking Links</button>
+        </div>
+        <div class="content-card">
+          <div class="content-card-title">Homepage Stats</div>
+          <div class="content-card-desc">Update the four stat numbers shown on the homepage</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-g"><label class="form-lbl">Stat 1 Number</label><input class="form-ctrl stat-n-inp" data-stat="0" value="Now"></div>
+            <div class="form-g"><label class="form-lbl">Stat 1 Label</label><input class="form-ctrl stat-l-inp" data-stat="0" value="Booking Sessions"></div>
+            <div class="form-g"><label class="form-lbl">Stat 2 Number</label><input class="form-ctrl stat-n-inp" data-stat="1" value="4"></div>
+            <div class="form-g"><label class="form-lbl">Stat 2 Label</label><input class="form-ctrl stat-l-inp" data-stat="1" value="Photography Specialties"></div>
+            <div class="form-g"><label class="form-lbl">Stat 3 Number</label><input class="form-ctrl stat-n-inp" data-stat="2" value="48hr"></div>
+            <div class="form-g"><label class="form-lbl">Stat 3 Label</label><input class="form-ctrl stat-l-inp" data-stat="2" value="Gallery Delivery"></div>
+            <div class="form-g"><label class="form-lbl">Stat 4 Number</label><input class="form-ctrl stat-n-inp" data-stat="3" value="100%"></div>
+            <div class="form-g"><label class="form-lbl">Stat 4 Label</label><input class="form-ctrl stat-l-inp" data-stat="3" value="Client Satisfaction"></div>
+          </div>
+          <button class="abtn abtn-p" onclick="saveStats()">Save Stats</button>
+        </div>
+        <div class="content-card">
+          <div class="content-card-title">Homepage Categories</div>
+          <div class="content-card-desc">Add, rename, reorder, or remove the categories shown on the homepage preview grid and portfolio filter bar</div>
+          <div id="cat-manager-list" style="margin-bottom:16px;"></div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input class="form-ctrl" id="new-cat-name" placeholder="New category name e.g. Maternity" style="flex:1;">
+            <button class="abtn abtn-p" style="flex-shrink:0;" onclick="addCategory()">+ Add</button>
+          </div>
+          <button class="abtn" onclick="resetCategories()">Reset to Defaults</button>
         </div>
         <div class="content-card">
           <div class="content-card-title">Contact Information</div>
@@ -1173,9 +1185,10 @@ function nav(page) {
   const nl = document.getElementById('nl-' + page);
   if (nl) nl.classList.add('active');
   currentPage = page;
-  if (page === 'portfolio') renderPortfolio();
+  if (page === 'portfolio') { renderPortfolio(); updatePortCatBar(); }
   if (page === 'gallery') renderClientGalleries();
   if (page === 'admin') initAdmin();
+  if (page === 'home') renderHomePreviewGrid();
   setTimeout(() => { setupReveal(); applyLiveCMS(); }, 100);
 }
 
@@ -1512,7 +1525,7 @@ function admNav(el, panel) {
   el.classList.add('active');
   document.getElementById('adm-' + panel).classList.add('show');
   if (panel === 'upload') populateUploadSelect();
-  if (panel === 'content') { renderCMSPreviewGrid(); loadHeroImgPreview(); renderPortfolioCMSGrid(); }
+  if (panel === 'content') { renderCMSPreviewGrid(); loadHeroImgPreview(); renderPortfolioCMSGrid(); renderCatManager(); loadCMSFields(); }
 }
 
 async function loadHeroImgPreview() {
@@ -1849,10 +1862,17 @@ function loadCMSFields() {
   f('cms-hero-title').value = cms.heroTitle || 'Every Moment Deserves to Last';
   f('cms-hero-sub').value   = cms.heroSub   || 'Your Story, Written in Whyte';
   f('cms-location').value   = cms.location  || 'Detroit Lakes, MN';
-  f('cms-pix-url').value    = cms.pixUrl    || 'https://pixieset.com';
   f('cms-email').value      = cms.email     || 'hello@21studios.com';
   f('cms-phone').value      = cms.phone     || '(602) 555-0000';
   f('cms-city').value       = cms.city      || 'Detroit Lakes, MN';
+  if (f('cms-pix-model'))     f('cms-pix-model').value     = cms.pixUrlModel     || '';
+  if (f('cms-pix-portfolio')) f('cms-pix-portfolio').value = cms.pixUrlPortfolio || '';
+  // Load stats
+  const stats = cms.stats || [];
+  const defN = ['Now','4','48hr','100%'];
+  const defL = ['Booking Sessions','Photography Specialties','Gallery Delivery','Client Satisfaction'];
+  document.querySelectorAll('.stat-n-inp').forEach((el, i) => { el.value = (stats[i] && stats[i].n) || defN[i]; });
+  document.querySelectorAll('.stat-l-inp').forEach((el, i) => { el.value = (stats[i] && stats[i].l) || defL[i]; });
 }
 
 // ─── PORTFOLIO PHOTO MANAGEMENT ───────────────────────────
@@ -2031,9 +2051,179 @@ async function renderCMSPreviewGrid() {
 }
 
 function savePixURL() {
-  saveCMSData({ pixUrl: document.getElementById('cms-pix-url').value });
+  const v = document.getElementById('cms-pix-url');
+  if (v) saveCMSData({ pixUrl: v.value });
   applyLiveCMS();
-  showToast('Booking URL updated across all pages!');
+  showToast('Booking URL updated!');
+}
+
+function saveBookingURLs() {
+  const model     = document.getElementById('cms-pix-model')?.value.trim();
+  const portfolio = document.getElementById('cms-pix-portfolio')?.value.trim();
+  const data = {};
+  if (model)     data.pixUrlModel     = model;
+  if (portfolio) data.pixUrlPortfolio = portfolio;
+  // Nav CTA uses model call URL as default
+  if (model)     data.pixUrl          = model;
+  saveCMSData(data);
+  applyLiveCMS();
+  showToast('Booking links updated!');
+}
+
+function saveStats() {
+  const stats = [];
+  document.querySelectorAll('.stat-n-inp').forEach((el, i) => {
+    stats[i] = stats[i] || {};
+    stats[i].n = el.value;
+  });
+  document.querySelectorAll('.stat-l-inp').forEach((el, i) => {
+    stats[i] = stats[i] || {};
+    stats[i].l = el.value;
+  });
+  saveCMSData({stats});
+  applyLiveCMS();
+  showToast('Stats updated on homepage!');
+}
+
+// ─── CATEGORY MANAGEMENT ────────────────────────────
+function getDefaultCategories() {
+  return [
+    {id:'c1', name:'Family',   label:'Family',   previewImg:'https://images.unsplash.com/photo-1581952976147-5a2d15560349?w=900&q=80', idbKey:null, order:0, visible:true},
+    {id:'c2', name:'Newborn',  label:'Newborn',  previewImg:'https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=600&q=80',  idbKey:null, order:1, visible:true},
+    {id:'c3', name:'Portrait', label:'Portrait', previewImg:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', idbKey:null, order:2, visible:true},
+    {id:'c4', name:'Couples',  label:'Couples',  previewImg:'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80',  idbKey:null, order:3, visible:true},
+    {id:'c5', name:'Newborn2', label:'Newborn',  previewImg:'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=600&q=80',  idbKey:null, order:4, visible:true},
+  ];
+}
+
+function getCategories() {
+  return LS.get('home_categories') || getDefaultCategories();
+}
+
+function saveCategories(cats) {
+  LS.set('home_categories', cats);
+}
+
+function resetCategories() {
+  if (!confirm('Reset all categories to defaults?')) return;
+  LS.del('home_categories');
+  renderCatManager();
+  renderHomePreviewGrid();
+  showToast('Categories reset to defaults');
+}
+
+function addCategory() {
+  const inp = document.getElementById('new-cat-name');
+  const name = inp?.value.trim();
+  if (!name) { showToast('Enter a category name first'); return; }
+  const cats = getCategories();
+  const id = 'c' + Date.now();
+  cats.push({
+    id, name: name.toLowerCase().replace(/\s+/g,'-'),
+    label: name,
+    previewImg: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80',
+    idbKey: null, order: cats.length, visible: true
+  });
+  saveCategories(cats);
+  renderCatManager();
+  renderHomePreviewGrid();
+  updatePortCatBar();
+  if (inp) inp.value = '';
+  showToast('"' + name + '" category added!');
+}
+
+function deleteCat(id) {
+  const cats = getCategories().filter(c => c.id !== id);
+  // Re-number order
+  cats.forEach((c, i) => c.order = i);
+  saveCategories(cats);
+  renderCatManager();
+  renderHomePreviewGrid();
+  updatePortCatBar();
+  showToast('Category removed');
+}
+
+function toggleCatVisibility(id) {
+  const cats = getCategories();
+  const c = cats.find(x => x.id === id);
+  if (c) { c.visible = !c.visible; saveCategories(cats); renderCatManager(); renderHomePreviewGrid(); updatePortCatBar(); }
+}
+
+function moveCat(id, dir) {
+  const cats = getCategories();
+  const idx = cats.findIndex(c => c.id === id);
+  const swap = idx + dir;
+  if (swap < 0 || swap >= cats.length) return;
+  [cats[idx], cats[swap]] = [cats[swap], cats[idx]];
+  cats.forEach((c, i) => c.order = i);
+  saveCategories(cats);
+  renderCatManager();
+  renderHomePreviewGrid();
+  updatePortCatBar();
+}
+
+async function uploadCatImage(id, input) {
+  const f = input.files[0];
+  if (!f) return;
+  showToast('Saving category image...');
+  const url = await compressImage(f, 900, 0.82);
+  const idbKey = 'cat_img_' + id;
+  await saveImageIDB(idbKey, url);
+  const cats = getCategories();
+  const c = cats.find(x => x.id === id);
+  if (c) { c.idbKey = idbKey; c.previewImg = url; saveCategories(cats); }
+  renderCatManager();
+  renderHomePreviewGrid();
+  input.value = '';
+  showToast('Category image updated!');
+}
+
+function renderCatManager() {
+  const wrap = document.getElementById('cat-manager-list');
+  if (!wrap) return;
+  const cats = getCategories();
+  wrap.innerHTML = cats.map((c, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <button class="abtn" style="padding:4px 7px;font-size:.55rem;" onclick="moveCat('${c.id}',-1)" ${i===0?'disabled':''}>▲</button>
+        <button class="abtn" style="padding:4px 7px;font-size:.55rem;" onclick="moveCat('${c.id}',1)" ${i===cats.length-1?'disabled':''}>▼</button>
+      </div>
+      <img src="${c.previewImg}" style="width:48px;height:48px;object-fit:cover;border:1px solid rgba(255,255,255,.1);flex-shrink:0;cursor:pointer;" 
+           title="Click to change image" onclick="document.getElementById('cat-img-inp-${c.id}').click()">
+      <input type="file" id="cat-img-inp-${c.id}" accept="image/*" style="display:none" onchange="uploadCatImage('${c.id}',this)">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.72rem;font-weight:400;color:var(--white);margin-bottom:2px;">${c.label}</div>
+        <div style="font-size:.48rem;color:rgba(245,243,239,.3);letter-spacing:.1em;">${c.visible ? 'Visible' : 'Hidden'}</div>
+      </div>
+      <button class="abtn" style="font-size:.48rem;padding:6px 10px;" onclick="toggleCatVisibility('${c.id}')">${c.visible ? 'Hide' : 'Show'}</button>
+      <button class="abtn abtn-d" style="font-size:.48rem;padding:6px 10px;" onclick="deleteCat('${c.id}')">✕</button>
+    </div>`).join('');
+}
+
+async function renderHomePreviewGrid() {
+  const grid = document.getElementById('home-preview-grid');
+  if (!grid) return;
+  const cats = getCategories().filter(c => c.visible);
+  const items = cats.slice(0, 5); // show max 5 in grid
+  // Load IDB images
+  const urls = await Promise.all(items.map(c => c.idbKey ? getImageIDB(c.idbKey) : Promise.resolve(c.previewImg)));
+  // First item is large (spans 2 rows), rest are normal
+  grid.innerHTML = items.map((c, i) => `
+    <div class="pi" style="aspect-ratio:${i===0?'4/5':'3/4'};" onclick="nav('portfolio');filterPort(document.querySelector('[data-cat=\'all\']'),'all')">
+      <img src="${urls[i] || c.previewImg}" alt="${c.label}" loading="lazy">
+      <div class="pi-ov"><span class="pi-label">${c.label}</span></div>
+    </div>`).join('');
+}
+
+function updatePortCatBar() {
+  const bar = document.getElementById('cat-bar');
+  if (!bar) return;
+  const cats = getCategories().filter(c => c.visible);
+  const catValues = [...new Set(cats.map(c => c.name.toLowerCase().replace(/\s+/g,'-')))];
+  const labels = {};
+  cats.forEach(c => { labels[c.name.toLowerCase().replace(/\s+/g,'-')] = c.label; });
+  bar.innerHTML = `<div class="cat-tab active" data-cat="all" onclick="filterPort(this,'all')">All</div>` +
+    catValues.map(v => `<div class="cat-tab" data-cat="${v}" onclick="filterPort(this,'${v}')">${labels[v]}</div>`).join('');
 }
 
 function saveContact() {
@@ -2091,9 +2281,20 @@ function applyLiveCMS() {
     el.textContent = 'Sessions are available Monday–Saturday by appointment in ' + city + '. We typically respond to all inquiries within 24 hours. For fastest booking, use our Pixieset booking link above.';
   });
 
-  // All Pixieset booking links
-  document.querySelectorAll('[data-cms="pix-url"]').forEach(el => {
-    el.href = pixUrl;
+  // Booking links — model call, portfolio, and generic
+  const pixUrlModel     = cms.pixUrlModel     || pixUrl;
+  const pixUrlPortfolio = cms.pixUrlPortfolio || pixUrl;
+  document.querySelectorAll('[data-cms="pix-url"]').forEach(el => { el.href = pixUrl; });
+  document.querySelectorAll('[data-cms="pix-url-model"]').forEach(el => { el.href = pixUrlModel; });
+  document.querySelectorAll('[data-cms="pix-url-portfolio"]').forEach(el => { el.href = pixUrlPortfolio; });
+
+  // Stats
+  const stats = cms.stats || [];
+  stats.forEach((s, i) => {
+    const n = document.getElementById('stat-n-' + i);
+    const l = document.getElementById('stat-l-' + i);
+    if (n && s.n) n.textContent = s.n;
+    if (l && s.l) l.textContent = s.l;
   });
 
   // Hero background image
@@ -2123,6 +2324,9 @@ function applyLiveCMS() {
       }
     }
   })();
+  // Also re-render homepage grid with category images
+  renderHomePreviewGrid();
+
   // Hero background image — load from IDB
   if (LS.get('hero_img_set')) {
     getImageIDB('hero_img').then(url => {
@@ -2206,13 +2410,14 @@ function submitForm(e) {
 // INIT
 // ═══════════════════════════════════════
 window.addEventListener('load', () => {
-  // Apply CMS immediately so contact/hero values update right away
   applyLiveCMS();
   loadLogoPreview();
+  renderHomePreviewGrid();
+  updatePortCatBar();
   setTimeout(() => {
     document.getElementById('loading').classList.add('gone');
     setupReveal();
-    applyLiveCMS(); // apply again after DOM fully settles
+    applyLiveCMS();
   }, 1400);
   if (location.hash === '#admin') nav('admin');
 });
