@@ -969,6 +969,30 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
           <div class="form-g"><label class="form-lbl">Location</label><input class="form-ctrl" id="cms-city" value="Detroit Lakes, MN"></div>
           <button class="abtn abtn-p" onclick="saveContact()">Save Contact Info</button>
         </div>
+        <div class="content-card">
+          <div class="content-card-title">Portfolio Photos</div>
+          <div class="content-card-desc">Add your own photos to the public portfolio page. These appear under each category.</div>
+          <div class="form-g">
+            <label class="form-lbl">Category</label>
+            <select class="form-ctrl" id="port-cat-select">
+              <option value="family">Family</option>
+              <option value="newborn">Newborn</option>
+              <option value="couples">Couples</option>
+              <option value="portrait">Portrait</option>
+            </select>
+          </div>
+          <div class="form-g">
+            <label class="form-lbl">Photo Name / Title</label>
+            <input class="form-ctrl" id="port-photo-name" placeholder="e.g. Summer Shoot 2024">
+          </div>
+          <div class="upload-zone" onclick="document.getElementById('port-photo-upload').click()" style="padding:28px;margin-bottom:12px;">
+            <div class="uz-icon">📸</div>
+            <div class="uz-text"><strong>Click to upload portfolio photo</strong><br>JPG, PNG · Will be compressed automatically</div>
+          </div>
+          <input type="file" id="port-photo-upload" accept="image/*" style="display:none" onchange="uploadPortfolioPhoto(this)">
+          <div id="portfolio-cms-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px;"></div>
+          <p style="font-size:.52rem;color:rgba(245,243,239,.25);margin-top:12px;letter-spacing:.1em;">Hover a photo and click ✕ to remove it from the portfolio</p>
+        </div>
       </div>
       <!-- Settings Panel -->
       <div class="adm-panel" id="adm-settings">
@@ -1147,7 +1171,11 @@ let lbIdx = 0;
 
 function buildPortPhotos() {
   const gals = getGalleries().filter(g => g.published);
-  portPhotos = [...SAMPLE_PHOTOS.all];
+  // Start with custom uploaded portfolio photos, then fall back to samples
+  const custom = getPortfolioPhotos();
+  portPhotos = custom.length
+    ? [...custom.map(p => ({url: p.url, cat: p.cat, name: p.name}))]
+    : [...SAMPLE_PHOTOS.all];
   gals.forEach(g => {
     g.photos.forEach(p => {
       portPhotos.push({url: p.url, cat: g.category, name: g.name, galId: g.id});
@@ -1401,7 +1429,7 @@ function admNav(el, panel) {
   el.classList.add('active');
   document.getElementById('adm-' + panel).classList.add('show');
   if (panel === 'upload') populateUploadSelect();
-  if (panel === 'content') { renderCMSPreviewGrid(); loadHeroImgPreview(); }
+  if (panel === 'content') { renderCMSPreviewGrid(); loadHeroImgPreview(); renderPortfolioCMSGrid(); }
 }
 
 function loadHeroImgPreview() {
@@ -1742,6 +1770,71 @@ function loadCMSFields() {
   f('cms-city').value       = cms.city      || 'Detroit Lakes, MN';
 }
 
+// ─── PORTFOLIO PHOTO MANAGEMENT ───────────────────────────
+function getPortfolioPhotos() {
+  return LS.get('portfolio_photos') || [];
+}
+function savePortfolioPhotos(photos) {
+  LS.set('portfolio_photos', photos);
+}
+
+function uploadPortfolioPhoto(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const cat = document.getElementById('port-cat-select').value;
+  const name = document.getElementById('port-photo-name').value.trim() || cat.charAt(0).toUpperCase()+cat.slice(1)+' Photo';
+  showToast('Processing portfolio photo...');
+  compressImage(f, 1000, 0.82).then(url => {
+    try {
+      const photos = getPortfolioPhotos();
+      photos.push({
+        id: 'pp' + Date.now(),
+        url, cat, name,
+        addedAt: new Date().toISOString().split('T')[0]
+      });
+      savePortfolioPhotos(photos);
+      renderPortfolioCMSGrid();
+      // Refresh portfolio page if open
+      if (currentPage === 'portfolio') renderPortfolio();
+      showToast('Photo added to portfolio!');
+    } catch(e) {
+      showToast('Storage full — try a smaller image');
+    }
+    input.value = '';
+    document.getElementById('port-photo-name').value = '';
+  }).catch(() => showToast('Error processing photo'));
+}
+
+function deletePortfolioPhoto(id) {
+  const photos = getPortfolioPhotos().filter(p => p.id !== id);
+  savePortfolioPhotos(photos);
+  renderPortfolioCMSGrid();
+  if (currentPage === 'portfolio') renderPortfolio();
+  showToast('Photo removed from portfolio');
+}
+
+function renderPortfolioCMSGrid() {
+  const wrap = document.getElementById('portfolio-cms-grid');
+  if (!wrap) return;
+  const photos = getPortfolioPhotos();
+  if (!photos.length) {
+    wrap.innerHTML = '<p style="font-size:.6rem;color:rgba(245,243,239,.25);grid-column:1/-1;padding:12px 0;">No custom photos yet. Upload your first one above.</p>';
+    return;
+  }
+  wrap.innerHTML = photos.map(p => `
+    <div style="position:relative;border:1px solid rgba(255,255,255,.1);overflow:hidden;">
+      <img src="${p.url}" style="width:100%;height:80px;object-fit:cover;display:block;">
+      <div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;
+                  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;
+                  justify-content:center;font-size:.65rem;cursor:pointer;border:1px solid rgba(255,255,255,.2);"
+           onclick="deletePortfolioPhoto('${p.id}')" title="Remove">✕</div>
+      <div style="font-size:.4rem;padding:3px 4px;color:rgba(245,243,239,.4);letter-spacing:.08em;
+                  background:rgba(0,0,0,.4);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ${p.name} · ${p.cat}
+      </div>
+    </div>`).join('');
+}
+
 function saveCMS() {
   const heroImgInput = document.getElementById('cms-hero-img');
   const heroImgVal = heroImgInput ? heroImgInput.value.trim() : '';
@@ -1750,7 +1843,10 @@ function saveCMS() {
     heroSub:   document.getElementById('cms-hero-sub').value,
     location:  document.getElementById('cms-location').value,
   };
-  if (heroImgVal) data.heroImg = heroImgVal;
+  // Only update heroImg from URL field if it's a real URL (not the "(uploaded photo)" placeholder)
+  if (heroImgVal && heroImgVal !== '(uploaded photo)' && heroImgVal.startsWith('http')) {
+    data.heroImg = heroImgVal;
+  }
   saveCMSData(data);
   applyLiveCMS();
   showToast('Changes saved and live across all pages!');
@@ -1759,31 +1855,51 @@ function saveCMS() {
 function uploadHeroImage(input) {
   const f = input.files[0];
   if (!f) return;
-  showToast('Processing hero image...');
-  compressImage(f, 1800, 0.88).then(url => {
-    saveCMSData({heroImg: url});
-    applyLiveCMS();
-    document.getElementById('cms-hero-img').value = '(uploaded image)';
-    document.getElementById('hero-img-preview').innerHTML = 
-      `<img src="${url}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
-    showToast('Hero image updated!');
-  });
+  showToast('Uploading hero image...');
+  // Use lower compression to avoid localStorage overflow
+  compressImage(f, 1400, 0.80).then(url => {
+    try {
+      saveCMSData({heroImg: url});
+      applyLiveCMS();
+      const prev = document.getElementById('hero-img-preview');
+      if (prev) prev.innerHTML = `<img src="${url}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
+      const inp = document.getElementById('cms-hero-img');
+      if (inp) inp.value = '(uploaded photo)';
+      showToast('Hero image updated!');
+    } catch(e) {
+      showToast('Image too large — try a smaller file or paste a URL instead');
+    }
+    input.value = '';
+  }).catch(() => showToast('Error processing image'));
 }
 
-let _previewSlot = 0;
+window._previewSlot = 0;
+function selectPreviewSlot(i) {
+  window._previewSlot = i;
+  const inp = document.getElementById('preview-img-upload');
+  if (inp) { inp.value = ''; inp.click(); }
+}
 function uploadPreviewImage(input) {
   const f = input.files[0];
   if (!f) return;
-  showToast('Processing image...');
+  const slot = window._previewSlot;
+  showToast('Processing image ' + (slot+1) + '...');
   compressImage(f, 1200, 0.85).then(url => {
-    const cms = getCMS();
-    const imgs = cms.previewImgs || getDefaultPreviewImgs();
-    imgs[_previewSlot] = {url, label: imgs[_previewSlot]?.label || 'Photo'};
-    saveCMSData({previewImgs: imgs});
-    applyLiveCMS();
-    renderCMSPreviewGrid();
-    showToast('Preview image ' + (_previewSlot+1) + ' updated!');
-  });
+    try {
+      const cms = getCMS();
+      const imgs = cms.previewImgs || getDefaultPreviewImgs();
+      const labels = ['Family','Newborn','Portrait','Couples','Newborn'];
+      imgs[slot] = {url, label: imgs[slot]?.label || labels[slot] || 'Photo'};
+      saveCMSData({previewImgs: imgs});
+      applyLiveCMS();
+      renderCMSPreviewGrid();
+      showToast('Image ' + (slot+1) + ' updated on homepage!');
+    } catch(e) {
+      showToast('Storage full — try a smaller image');
+    }
+    // Reset so same file can be re-selected next time
+    input.value = '';
+  }).catch(() => showToast('Error processing image'));
 }
 
 function getDefaultPreviewImgs() {
@@ -1800,19 +1916,22 @@ function renderCMSPreviewGrid() {
   const wrap = document.getElementById('cms-preview-grid');
   if (!wrap) return;
   const cms = getCMS();
-  const imgs = cms.previewImgs || getDefaultPreviewImgs();
+  // Always show all 5 slots, filling unsaved ones with defaults
+  const defs = getDefaultPreviewImgs();
+  const saved = cms.previewImgs || [];
+  const imgs = defs.map((def, i) => (saved[i] && saved[i].url) ? saved[i] : def);
   wrap.innerHTML = imgs.map((img, i) => `
-    <div style="position:relative;cursor:pointer;border:1px solid rgba(255,255,255,.1);" 
-         title="Click to replace image ${i+1}" onclick="_previewSlot=${i};document.getElementById('preview-img-upload').click()">
-      <img src="${img.url}" style="width:100%;height:70px;object-fit:cover;display:block;">
-      <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;
-                  font-size:.45rem;letter-spacing:.15em;text-transform:uppercase;color:transparent;
-                  transition:all .2s;" 
-           onmouseover="this.style.background='rgba(0,0,0,.55)';this.style.color='#fff';"
-           onmouseout="this.style.background='rgba(0,0,0,0)';this.style.color='transparent';">
-        Replace
+    <div style="position:relative;cursor:pointer;border:2px solid rgba(255,255,255,.1);border-radius:2px;overflow:hidden;" 
+         title="Click to replace photo ${i+1}"
+         onclick="selectPreviewSlot(${i})">
+      <img src="${img.url}" style="width:100%;height:80px;object-fit:cover;display:block;">
+      <div style="position:absolute;inset:0;background:rgba(184,150,106,.0);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;transition:all .25s;"
+           onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,.65)';"
+           onmouseout="this.style.opacity='0';this.style.background='rgba(0,0,0,0)';">
+        <span style="font-size:1.1rem;">📷</span>
+        <span style="font-size:.42rem;letter-spacing:.15em;text-transform:uppercase;color:#fff;">Replace</span>
       </div>
-      <div style="font-size:.42rem;text-align:center;padding:4px;color:rgba(245,243,239,.35);letter-spacing:.1em;">${img.label}</div>
+      <div style="font-size:.44rem;text-align:center;padding:5px 2px;color:rgba(245,243,239,.4);letter-spacing:.1em;background:rgba(0,0,0,.3);">${img.label}</div>
     </div>`).join('');
 }
 
@@ -1889,19 +2008,19 @@ function applyLiveCMS() {
     if (heroBgImg) heroBgImg.src = heroImg;
   }
 
-  // Homepage preview grid images
-  const previewImgs = cms.previewImgs;
-  if (previewImgs && previewImgs.length) {
-    const piEls = document.querySelectorAll('#home-preview-grid .pi');
-    piEls.forEach((el, i) => {
-      if (previewImgs[i]) {
-        const img = el.querySelector('img');
-        const lbl = el.querySelector('.pi-label');
-        if (img) img.src = previewImgs[i].url;
-        if (lbl) lbl.textContent = previewImgs[i].label || '';
-      }
-    });
-  }
+  // Homepage preview grid — always apply all 5, merge saved with defaults
+  const defaults5 = getDefaultPreviewImgs();
+  const saved5 = cms.previewImgs || [];
+  const merged5 = defaults5.map((def, i) => (saved5[i] && saved5[i].url) ? saved5[i] : def);
+  const piEls = document.querySelectorAll('#home-preview-grid .pi');
+  piEls.forEach((el, i) => {
+    if (merged5[i]) {
+      const img = el.querySelector('img');
+      const lbl = el.querySelector('.pi-label');
+      if (img && img.src !== merged5[i].url) img.src = merged5[i].url;
+      if (lbl) lbl.textContent = merged5[i].label || '';
+    }
+  });
 }
 
 function changeAdminPw() {
