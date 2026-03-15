@@ -483,7 +483,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
     <li><a onclick="nav('contact')" id="nl-contact">Contact</a></li>
     <li><a onclick="nav('gallery')" id="nl-gallery">Client Gallery</a></li>
   </ul>
-  <a class="nav-cta" href="https://pixieset.com" target="_blank">Book Your Session</a>
+  <a class="nav-cta" href="https://pixieset.com" target="_blank" data-cms="pix-url">Book Your Session</a>
   <div class="nav-burger" onclick="toggleMob()">
     <span></span><span></span><span></span>
   </div>
@@ -500,7 +500,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
       <div class="hero-eye">Detroit Lakes, Minnesota</div>
       <h1 class="hero-title">Every Moment<br><em>Deserves to Last</em></h1>
       <p class="hero-sub">Your Story, Written in Whyte</p>
-      <a class="btn-ghost" href="https://pixieset.com" target="_blank">Book Your Session</a>
+      <a class="btn-ghost" href="https://pixieset.com" target="_blank" data-cms="pix-url">Book Your Session</a>
     </div>
     <div class="hero-scroll">
       <span>Scroll</span>
@@ -587,7 +587,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         <div class="foot-col-title">Clients</div>
         <ul class="foot-links">
           <li><a onclick="nav('gallery')">Client Gallery</a></li>
-          <li><a href="https://pixieset.com" target="_blank">Book a Session</a></li>
+          <li><a href="https://pixieset.com" target="_blank" data-cms="pix-url">Book a Session</a></li>
         </ul>
       </div>
       <div>
@@ -628,7 +628,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
   <section style="text-align:center;padding:60px 56px 120px;">
     <div class="reveal">
       <p class="sec-body" style="margin:0 auto 48px;text-align:center;max-width:500px;">Ready to create your own beautiful images? Book your session today through Pixieset.</p>
-      <a class="btn-ghost accent-fill" href="https://pixieset.com" target="_blank">Book Your Session</a>
+      <a class="btn-ghost accent-fill" href="https://pixieset.com" target="_blank" data-cms="pix-url">Book Your Session</a>
     </div>
   </section>
   <footer>
@@ -705,7 +705,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
 
   <section style="text-align:center;padding:40px 56px 120px;">
     <div class="reveal">
-      <a class="btn-ghost accent-fill" href="https://pixieset.com" target="_blank">Begin Your Journey</a>
+      <a class="btn-ghost accent-fill" href="https://pixieset.com" target="_blank" data-cms="pix-url">Begin Your Journey</a>
     </div>
   </section>
   <footer>
@@ -735,7 +735,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         <li>Images may be used for 21 Studios marketing</li>
         <li>Perfect for individuals building a portfolio</li>
       </ul>
-      <a class="sess-btn" href="https://pixieset.com" target="_blank">Book This Session</a>
+      <a class="sess-btn" href="https://pixieset.com" target="_blank" data-cms="pix-url">Book This Session</a>
     </div>
     <div class="sess-card reveal" style="transition-delay:.1s">
       <div class="sess-badge">Portfolio Building Session</div>
@@ -748,7 +748,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         <li>Option to purchase additional edited images</li>
         <li>Full personal usage rights for all images</li>
       </ul>
-      <a class="sess-btn" href="https://pixieset.com" target="_blank">Book This Session</a>
+      <a class="sess-btn" href="https://pixieset.com" target="_blank" data-cms="pix-url">Book This Session</a>
     </div>
   </div>
   <p class="sess-note reveal">All sessions are booked through Pixieset. A 25% deposit is required at time of booking. Remaining balance due on session day. Cancellations within 48 hours forfeit deposit.</p>
@@ -782,9 +782,9 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         <div class="contact-label">Location</div>
         <div class="contact-val" data-cms="city">Detroit Lakes, MN</div>
         <div class="contact-label">Booking</div>
-        <div class="contact-val"><a href="https://pixieset.com" target="_blank" style="color:var(--accent);">Book via Pixieset →</a></div>
+        <div class="contact-val"><a href="https://pixieset.com" target="_blank" style="color:var(--accent);" data-cms="pix-url">Book via Pixieset →</a></div>
       </div>
-      <p class="contact-note reveal">Sessions are available Monday–Saturday by appointment. We typically respond to all inquiries within 24 hours. For fastest booking, use our Pixieset booking link above.</p>
+      <p class="contact-note reveal" data-cms="contact-note">Sessions are available Monday–Saturday by appointment in Detroit Lakes, MN. We typically respond to all inquiries within 24 hours. For fastest booking, use our Pixieset booking link above.</p>
     </div>
     <div class="reveal">
       <form id="contact-form" onsubmit="submitForm(event)">
@@ -934,11 +934,26 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         </div>
         <div class="content-card">
           <div class="content-card-title">Hero Section</div>
-          <div class="content-card-desc">Update the main headline and tagline on the homepage</div>
+          <div class="content-card-desc">Update the main headline, tagline, and hero image on the homepage</div>
           <div class="form-g"><label class="form-lbl">Main Headline</label><input class="form-ctrl" id="cms-hero-title" value="Every Moment Deserves to Last"></div>
-          <div class="form-g"><label class="form-lbl">Tagline</label><input class="form-ctrl" id="cms-hero-sub" value="Your Story, Written in Whyte"></div>
+          <div class="form-g"><label class="form-lbl">Tagline / Slogan</label><input class="form-ctrl" id="cms-hero-sub" value="Your Story, Written in Whyte"></div>
           <div class="form-g"><label class="form-lbl">Location</label><input class="form-ctrl" id="cms-location" value="Detroit Lakes, MN"></div>
+          <div class="form-g"><label class="form-lbl">Hero Background Image</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input class="form-ctrl" id="cms-hero-img" placeholder="Paste image URL or upload below" style="flex:1;">
+              <button class="abtn" style="flex-shrink:0;font-size:.5rem;padding:10px 14px;" onclick="document.getElementById('hero-img-upload').click()">Upload</button>
+            </div>
+            <input type="file" id="hero-img-upload" accept="image/*" style="display:none" onchange="uploadHeroImage(this)">
+            <div id="hero-img-preview" style="margin-top:10px;"></div>
+          </div>
           <button class="abtn abtn-p" onclick="saveCMS()">Save Changes</button>
+        </div>
+        <div class="content-card">
+          <div class="content-card-title">Homepage Preview Photos</div>
+          <div class="content-card-desc">Replace the 5 preview images shown on the homepage grid. Click any image to replace it.</div>
+          <div id="cms-preview-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px;"></div>
+          <input type="file" id="preview-img-upload" accept="image/*" style="display:none" onchange="uploadPreviewImage(this)">
+          <p style="font-size:.52rem;color:rgba(245,243,239,.25);margin-top:12px;letter-spacing:.1em;">Click an image to replace it with your own photo</p>
         </div>
         <div class="content-card">
           <div class="content-card-title">Booking Link</div>
@@ -1386,6 +1401,22 @@ function admNav(el, panel) {
   el.classList.add('active');
   document.getElementById('adm-' + panel).classList.add('show');
   if (panel === 'upload') populateUploadSelect();
+  if (panel === 'content') { renderCMSPreviewGrid(); loadHeroImgPreview(); }
+}
+
+function loadHeroImgPreview() {
+  const cms = getCMS();
+  const inp = document.getElementById('cms-hero-img');
+  const prev = document.getElementById('hero-img-preview');
+  if (!inp || !prev) return;
+  if (cms.heroImg) {
+    if (cms.heroImg.startsWith('data:')) {
+      inp.value = '(uploaded image)';
+      prev.innerHTML = `<img src="${cms.heroImg}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
+    } else {
+      inp.value = cms.heroImg;
+    }
+  }
 }
 
 // Gallery rendering
@@ -1700,25 +1731,89 @@ function dzDrop(e, ctx, galId) {
 // CMS
 function loadCMSFields() {
   const cms = getCMS();
-  if (document.getElementById('cms-hero-title')) {
-    document.getElementById('cms-hero-title').value = cms.heroTitle || 'Every Moment Deserves to Last';
-    document.getElementById('cms-hero-sub').value = cms.heroSub || 'Your Story, Written in Whyte';
-    document.getElementById('cms-location').value = cms.location || 'Detroit Lakes, MN';
-    document.getElementById('cms-pix-url').value = cms.pixUrl || 'https://pixieset.com';
-    document.getElementById('cms-email').value = cms.email || 'hello@21studios.com';
-    document.getElementById('cms-phone').value = cms.phone || '(602) 555-0000';
-    document.getElementById('cms-city').value = cms.city || 'Detroit Lakes, MN';
-  }
+  const f = id => document.getElementById(id);
+  if (!f('cms-hero-title')) return;
+  f('cms-hero-title').value = cms.heroTitle || 'Every Moment Deserves to Last';
+  f('cms-hero-sub').value   = cms.heroSub   || 'Your Story, Written in Whyte';
+  f('cms-location').value   = cms.location  || 'Detroit Lakes, MN';
+  f('cms-pix-url').value    = cms.pixUrl    || 'https://pixieset.com';
+  f('cms-email').value      = cms.email     || 'hello@21studios.com';
+  f('cms-phone').value      = cms.phone     || '(602) 555-0000';
+  f('cms-city').value       = cms.city      || 'Detroit Lakes, MN';
 }
 
 function saveCMS() {
-  saveCMSData({
+  const heroImgInput = document.getElementById('cms-hero-img');
+  const heroImgVal = heroImgInput ? heroImgInput.value.trim() : '';
+  const data = {
     heroTitle: document.getElementById('cms-hero-title').value,
-    heroSub: document.getElementById('cms-hero-sub').value,
-    location: document.getElementById('cms-location').value
-  });
+    heroSub:   document.getElementById('cms-hero-sub').value,
+    location:  document.getElementById('cms-location').value,
+  };
+  if (heroImgVal) data.heroImg = heroImgVal;
+  saveCMSData(data);
   applyLiveCMS();
-  showToast('Hero content saved! Changes are now live.');
+  showToast('Changes saved and live across all pages!');
+}
+
+function uploadHeroImage(input) {
+  const f = input.files[0];
+  if (!f) return;
+  showToast('Processing hero image...');
+  compressImage(f, 1800, 0.88).then(url => {
+    saveCMSData({heroImg: url});
+    applyLiveCMS();
+    document.getElementById('cms-hero-img').value = '(uploaded image)';
+    document.getElementById('hero-img-preview').innerHTML = 
+      `<img src="${url}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
+    showToast('Hero image updated!');
+  });
+}
+
+let _previewSlot = 0;
+function uploadPreviewImage(input) {
+  const f = input.files[0];
+  if (!f) return;
+  showToast('Processing image...');
+  compressImage(f, 1200, 0.85).then(url => {
+    const cms = getCMS();
+    const imgs = cms.previewImgs || getDefaultPreviewImgs();
+    imgs[_previewSlot] = {url, label: imgs[_previewSlot]?.label || 'Photo'};
+    saveCMSData({previewImgs: imgs});
+    applyLiveCMS();
+    renderCMSPreviewGrid();
+    showToast('Preview image ' + (_previewSlot+1) + ' updated!');
+  });
+}
+
+function getDefaultPreviewImgs() {
+  return [
+    {url:'https://images.unsplash.com/photo-1581952976147-5a2d15560349?w=900&q=80', label:'Family'},
+    {url:'https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=600&q=80', label:'Newborn'},
+    {url:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', label:'Portrait'},
+    {url:'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80', label:'Couples'},
+    {url:'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=600&q=80', label:'Newborn'},
+  ];
+}
+
+function renderCMSPreviewGrid() {
+  const wrap = document.getElementById('cms-preview-grid');
+  if (!wrap) return;
+  const cms = getCMS();
+  const imgs = cms.previewImgs || getDefaultPreviewImgs();
+  wrap.innerHTML = imgs.map((img, i) => `
+    <div style="position:relative;cursor:pointer;border:1px solid rgba(255,255,255,.1);" 
+         title="Click to replace image ${i+1}" onclick="_previewSlot=${i};document.getElementById('preview-img-upload').click()">
+      <img src="${img.url}" style="width:100%;height:70px;object-fit:cover;display:block;">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;
+                  font-size:.45rem;letter-spacing:.15em;text-transform:uppercase;color:transparent;
+                  transition:all .2s;" 
+           onmouseover="this.style.background='rgba(0,0,0,.55)';this.style.color='#fff';"
+           onmouseout="this.style.background='rgba(0,0,0,0)';this.style.color='transparent';">
+        Replace
+      </div>
+      <div style="font-size:.42rem;text-align:center;padding:4px;color:rgba(245,243,239,.35);letter-spacing:.1em;">${img.label}</div>
+    </div>`).join('');
 }
 
 function savePixURL() {
@@ -1739,53 +1834,71 @@ function saveContact() {
 
 function applyLiveCMS() {
   const cms = getCMS();
+  
+  // Always use CMS value OR fall back to HTML default
+  const heroTitle  = cms.heroTitle  || 'Every Moment Deserves to Last';
+  const heroSub    = cms.heroSub    || 'Your Story, Written in Whyte';
+  const location   = cms.location   || 'Detroit Lakes, MN';
+  const email      = cms.email      || 'hello@21studios.com';
+  const phone      = cms.phone      || '(602) 555-0000';
+  const city       = cms.city       || 'Detroit Lakes, MN';
+  const pixUrl     = cms.pixUrl     || 'https://pixieset.com';
 
-  // Hero title
+  // Hero title — split in half with italic second half
   const ht = document.querySelector('.hero-title');
-  if (ht && cms.heroTitle) {
-    const parts = cms.heroTitle.split(' ');
-    const half = Math.ceil(parts.length/2);
-    ht.innerHTML = parts.slice(0,half).join(' ') + '<br><em>' + parts.slice(half).join(' ') + '</em>';
+  if (ht) {
+    const parts = heroTitle.trim().split(' ');
+    const half = Math.ceil(parts.length / 2);
+    ht.innerHTML = parts.slice(0, half).join(' ') + '<br><em>' + parts.slice(half).join(' ') + '</em>';
   }
 
-  // Hero sub / slogan
-  if (cms.heroSub) {
-    document.querySelectorAll('.hero-sub').forEach(el => el.textContent = cms.heroSub);
-  }
+  // Hero slogan
+  document.querySelectorAll('.hero-sub').forEach(el => el.textContent = heroSub);
 
-  // Hero eye / location
-  if (cms.location) {
-    document.querySelectorAll('.hero-eye').forEach(el => el.textContent = cms.location);
-  }
+  // Hero location badge
+  document.querySelectorAll('.hero-eye').forEach(el => el.textContent = location);
 
-  // Footer tagline location
-  if (cms.location) {
-    document.querySelectorAll('.foot-tag').forEach(el => {
-      el.textContent = 'Where moments become memories. Cinematic photography rooted in ' + cms.location + '.';
-    });
-  }
+  // Footer tagline
+  document.querySelectorAll('.foot-tag').forEach(el => {
+    el.textContent = 'Your Story, Written in Whyte. Cinematic photography rooted in ' + location + '.';
+  });
 
   // Contact page — email
-  if (cms.email) {
-    document.querySelectorAll('[data-cms="email"]').forEach(el => el.textContent = cms.email);
+  document.querySelectorAll('[data-cms="email"]').forEach(el => el.textContent = email);
+
+  // Contact page — phone  
+  document.querySelectorAll('[data-cms="phone"]').forEach(el => el.textContent = phone);
+
+  // Contact page — city / location
+  document.querySelectorAll('[data-cms="city"]').forEach(el => el.textContent = city);
+
+  // Contact note mentions location
+  document.querySelectorAll('[data-cms="contact-note"]').forEach(el => {
+    el.textContent = 'Sessions are available Monday–Saturday by appointment in ' + city + '. We typically respond to all inquiries within 24 hours. For fastest booking, use our Pixieset booking link above.';
+  });
+
+  // All Pixieset booking links
+  document.querySelectorAll('[data-cms="pix-url"]').forEach(el => {
+    el.href = pixUrl;
+  });
+
+  // Hero background image
+  const heroImg = cms.heroImg;
+  if (heroImg) {
+    const heroBgImg = document.querySelector('.hero-bg img');
+    if (heroBgImg) heroBgImg.src = heroImg;
   }
 
-  // Contact page — phone
-  if (cms.phone) {
-    document.querySelectorAll('[data-cms="phone"]').forEach(el => el.textContent = cms.phone);
-  }
-
-  // Contact page — city
-  if (cms.city) {
-    document.querySelectorAll('[data-cms="city"]').forEach(el => el.textContent = cms.city);
-  }
-
-  // Pixieset booking URLs
-  if (cms.pixUrl) {
-    document.querySelectorAll('[data-cms="pix-url"]').forEach(el => {
-      el.href = cms.pixUrl;
-      if (el.tagName === 'A' && el.classList.contains('pix-btn')) {
-        el.href = cms.pixUrl;
+  // Homepage preview grid images
+  const previewImgs = cms.previewImgs;
+  if (previewImgs && previewImgs.length) {
+    const piEls = document.querySelectorAll('#home-preview-grid .pi');
+    piEls.forEach((el, i) => {
+      if (previewImgs[i]) {
+        const img = el.querySelector('img');
+        const lbl = el.querySelector('.pi-label');
+        if (img) img.src = previewImgs[i].url;
+        if (lbl) lbl.textContent = previewImgs[i].label || '';
       }
     });
   }
@@ -1860,13 +1973,14 @@ function submitForm(e) {
 // INIT
 // ═══════════════════════════════════════
 window.addEventListener('load', () => {
+  // Apply CMS immediately so contact/hero values update right away
+  applyLiveCMS();
+  loadLogoPreview();
   setTimeout(() => {
     document.getElementById('loading').classList.add('gone');
     setupReveal();
+    applyLiveCMS(); // apply again after DOM fully settles
   }, 1400);
-  loadLogoPreview();
-  applyLiveCMS();
-  // check if navigated to admin directly
   if (location.hash === '#admin') nav('admin');
 });
 
