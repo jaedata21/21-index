@@ -1025,21 +1025,99 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
 
 <script>
 // ═══════════════════════════════════════
-// STATE & STORAGE
+// STATE & STORAGE  (IndexedDB for images, localStorage for settings)
 // ═══════════════════════════════════════
+
+// ── localStorage for small non-image data ──
 const LS = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e) { return false; } },
   del: k => localStorage.removeItem(k)
 };
+
+// ── IndexedDB for images (supports hundreds of MB) ──
+const IDB = (() => {
+  const DB_NAME = '21studios_db';
+  const DB_VER  = 1;
+  const STORE   = 'images';
+  let _db = null;
+
+  function open() {
+    if (_db) return Promise.resolve(_db);
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, {keyPath: 'key'});
+        }
+      };
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror   = e => rej(e);
+    });
+  }
+
+  return {
+    get(key) {
+      return open().then(db => new Promise((res, rej) => {
+        const tx  = db.transaction(STORE, 'readonly');
+        const req = tx.objectStore(STORE).get(key);
+        req.onsuccess = e => res(e.target.result ? e.target.result.value : null);
+        req.onerror   = () => res(null);
+      }));
+    },
+    set(key, value) {
+      return open().then(db => new Promise((res, rej) => {
+        const tx  = db.transaction(STORE, 'readwrite');
+        const req = tx.objectStore(STORE).put({key, value});
+        req.onsuccess = () => res(true);
+        req.onerror   = () => res(false);
+      }));
+    },
+    del(key) {
+      return open().then(db => new Promise((res) => {
+        const tx  = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).delete(key);
+        tx.oncomplete = () => res(true);
+      }));
+    },
+    getAllKeys() {
+      return open().then(db => new Promise((res) => {
+        const tx  = db.transaction(STORE, 'readonly');
+        const req = tx.objectStore(STORE).getAllKeys();
+        req.onsuccess = e => res(e.target.result || []);
+        req.onerror   = () => res([]);
+      }));
+    }
+  };
+})();
 
 const DEFAULT_PW = '21Studios!';
 
 function getAdminPw() { return LS.get('adm_pw') || DEFAULT_PW; }
+
+// Galleries stored in localStorage (metadata only, no base64)
 function getGalleries() { return LS.get('galleries') || getDefaultGalleries(); }
 function saveGalleries(g) { LS.set('galleries', g); }
+
+// CMS text settings in localStorage (no images)
 function getCMS() { return LS.get('cms') || {}; }
 function saveCMSData(d) { LS.set('cms', {...getCMS(), ...d}); }
+
+// ── Image helpers using IndexedDB ──
+async function saveImageIDB(key, dataUrl) {
+  return IDB.set(key, dataUrl);
+}
+async function getImageIDB(key) {
+  return IDB.get(key);
+}
+async function deleteImageIDB(key) {
+  return IDB.del(key);
+}
+
+// Preview images: stored as idb:preview_0 … idb:preview_4
+// Hero image:     stored as idb:hero_img
+// Portfolio photos: stored as idb:port_photo_{id} with metadata in LS
 
 function getDefaultGalleries() {
   return [
@@ -1169,13 +1247,18 @@ const SAMPLE_PHOTOS = {
 let portPhotos = [];
 let lbIdx = 0;
 
-function buildPortPhotos() {
+async function buildPortPhotos() {
   const gals = getGalleries().filter(g => g.published);
-  // Start with custom uploaded portfolio photos, then fall back to samples
   const custom = getPortfolioPhotos();
-  portPhotos = custom.length
-    ? [...custom.map(p => ({url: p.url, cat: p.cat, name: p.name}))]
-    : [...SAMPLE_PHOTOS.all];
+  if (custom.length) {
+    // Load image URLs from IDB for custom photos
+    const urls = await Promise.all(custom.map(p => p.idbKey ? getImageIDB(p.idbKey) : Promise.resolve(null)));
+    portPhotos = custom
+      .map((p, i) => ({url: urls[i] || '', cat: p.cat, name: p.name}))
+      .filter(p => p.url);
+  } else {
+    portPhotos = [...SAMPLE_PHOTOS.all];
+  }
   gals.forEach(g => {
     g.photos.forEach(p => {
       portPhotos.push({url: p.url, cat: g.category, name: g.name, galId: g.id});
@@ -1183,8 +1266,8 @@ function buildPortPhotos() {
   });
 }
 
-function renderPortfolio(cat = 'all') {
-  buildPortPhotos();
+async function renderPortfolio(cat = 'all') {
+  await buildPortPhotos();
   const grid = document.getElementById('port-grid');
   if (!grid) return;
   const filtered = cat === 'all' ? portPhotos : portPhotos.filter(p => p.cat === cat);
@@ -1432,19 +1515,22 @@ function admNav(el, panel) {
   if (panel === 'content') { renderCMSPreviewGrid(); loadHeroImgPreview(); renderPortfolioCMSGrid(); }
 }
 
-function loadHeroImgPreview() {
-  const cms = getCMS();
+async function loadHeroImgPreview() {
   const inp = document.getElementById('cms-hero-img');
   const prev = document.getElementById('hero-img-preview');
   if (!inp || !prev) return;
-  if (cms.heroImg) {
-    if (cms.heroImg.startsWith('data:')) {
-      inp.value = '(uploaded image)';
-      prev.innerHTML = `<img src="${cms.heroImg}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
-    } else {
-      inp.value = cms.heroImg;
+  // Check IDB first
+  if (LS.get('hero_img_set')) {
+    const url = await getImageIDB('hero_img');
+    if (url) {
+      inp.value = '(uploaded photo)';
+      prev.innerHTML = `<img src="${url}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
+      return;
     }
   }
+  // Fall back to URL in CMS
+  const cms = getCMS();
+  if (cms.heroImg) inp.value = cms.heroImg;
 }
 
 // Gallery rendering
@@ -1656,22 +1742,21 @@ async function handleUpload(files, context, galId) {
       const photo = {id, url};
 
       if (context === 'main') {
-        uploadBuffers.main.push(photo);
+        // Save image to IDB, store key reference
+        const idbKey = 'gal_img_' + id;
+        await saveImageIDB(idbKey, url);
+        uploadBuffers.main.push({id, url, idbKey});
         renderUploadPreviewMain();
       } else if (context === 'edit' && galId) {
+        const idbKey = 'gal_img_' + id;
+        await saveImageIDB(idbKey, url);
         const gals = getGalleries();
         const g = gals.find(x => x.id === galId);
         if (g) {
-          g.photos.push(photo);
-          if (!g.cover) g.cover = photo.url;
-          try {
-            saveGalleries(gals);
-            showToast('Photo added!');
-          } catch(e) {
-            showToast('Storage full — try smaller images');
-            g.photos.pop();
-            return;
-          }
+          g.photos.push({id, url, idbKey});
+          if (!g.cover) g.cover = url;
+          saveGalleries(gals);
+          showToast('Photo added!');
           openEditGallery(galId);
         }
       }
@@ -1778,42 +1863,41 @@ function savePortfolioPhotos(photos) {
   LS.set('portfolio_photos', photos);
 }
 
-function uploadPortfolioPhoto(input) {
+async function uploadPortfolioPhoto(input) {
   const f = input.files[0];
   if (!f) return;
   const cat = document.getElementById('port-cat-select').value;
   const name = document.getElementById('port-photo-name').value.trim() || cat.charAt(0).toUpperCase()+cat.slice(1)+' Photo';
-  showToast('Processing portfolio photo...');
-  compressImage(f, 1000, 0.82).then(url => {
-    try {
-      const photos = getPortfolioPhotos();
-      photos.push({
-        id: 'pp' + Date.now(),
-        url, cat, name,
-        addedAt: new Date().toISOString().split('T')[0]
-      });
-      savePortfolioPhotos(photos);
-      renderPortfolioCMSGrid();
-      // Refresh portfolio page if open
-      if (currentPage === 'portfolio') renderPortfolio();
-      showToast('Photo added to portfolio!');
-    } catch(e) {
-      showToast('Storage full — try a smaller image');
-    }
-    input.value = '';
-    document.getElementById('port-photo-name').value = '';
-  }).catch(() => showToast('Error processing photo'));
+  showToast('Saving portfolio photo...');
+  try {
+    const url = await compressImage(f, 1100, 0.83);
+    const id = 'pp' + Date.now();
+    await saveImageIDB('port_' + id, url);
+    // Save metadata (no image data) to LS
+    const photos = getPortfolioPhotos();
+    photos.push({ id, idbKey: 'port_' + id, cat, name, addedAt: new Date().toISOString().split('T')[0] });
+    savePortfolioPhotos(photos);
+    renderPortfolioCMSGrid();
+    if (currentPage === 'portfolio') renderPortfolio();
+    showToast('Photo added to portfolio!');
+  } catch(e) {
+    showToast('Error saving photo: ' + e.message);
+  }
+  input.value = '';
+  document.getElementById('port-photo-name').value = '';
 }
 
-function deletePortfolioPhoto(id) {
-  const photos = getPortfolioPhotos().filter(p => p.id !== id);
-  savePortfolioPhotos(photos);
+async function deletePortfolioPhoto(id) {
+  const photos = getPortfolioPhotos();
+  const photo = photos.find(p => p.id === id);
+  if (photo && photo.idbKey) await deleteImageIDB(photo.idbKey);
+  savePortfolioPhotos(photos.filter(p => p.id !== id));
   renderPortfolioCMSGrid();
   if (currentPage === 'portfolio') renderPortfolio();
   showToast('Photo removed from portfolio');
 }
 
-function renderPortfolioCMSGrid() {
+async function renderPortfolioCMSGrid() {
   const wrap = document.getElementById('portfolio-cms-grid');
   if (!wrap) return;
   const photos = getPortfolioPhotos();
@@ -1821,9 +1905,11 @@ function renderPortfolioCMSGrid() {
     wrap.innerHTML = '<p style="font-size:.6rem;color:rgba(245,243,239,.25);grid-column:1/-1;padding:12px 0;">No custom photos yet. Upload your first one above.</p>';
     return;
   }
-  wrap.innerHTML = photos.map(p => `
+  // Load all image URLs from IDB in parallel
+  const urls = await Promise.all(photos.map(p => p.idbKey ? getImageIDB(p.idbKey) : Promise.resolve(p.url)));
+  wrap.innerHTML = photos.map((p, i) => `
     <div style="position:relative;border:1px solid rgba(255,255,255,.1);overflow:hidden;">
-      <img src="${p.url}" style="width:100%;height:80px;object-fit:cover;display:block;">
+      <img src="${urls[i] || ''}" style="width:100%;height:80px;object-fit:cover;display:block;">
       <div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;
                   width:18px;height:18px;border-radius:50%;display:flex;align-items:center;
                   justify-content:center;font-size:.65rem;cursor:pointer;border:1px solid rgba(255,255,255,.2);"
@@ -1852,25 +1938,26 @@ function saveCMS() {
   showToast('Changes saved and live across all pages!');
 }
 
-function uploadHeroImage(input) {
+async function uploadHeroImage(input) {
   const f = input.files[0];
   if (!f) return;
   showToast('Uploading hero image...');
-  // Use lower compression to avoid localStorage overflow
-  compressImage(f, 1400, 0.80).then(url => {
-    try {
-      saveCMSData({heroImg: url});
-      applyLiveCMS();
-      const prev = document.getElementById('hero-img-preview');
-      if (prev) prev.innerHTML = `<img src="${url}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
-      const inp = document.getElementById('cms-hero-img');
-      if (inp) inp.value = '(uploaded photo)';
-      showToast('Hero image updated!');
-    } catch(e) {
-      showToast('Image too large — try a smaller file or paste a URL instead');
-    }
-    input.value = '';
-  }).catch(() => showToast('Error processing image'));
+  try {
+    const url = await compressImage(f, 1600, 0.85);
+    await saveImageIDB('hero_img', url);
+    LS.set('hero_img_set', true);
+    // Apply immediately to live page
+    const heroBgImg = document.querySelector('.hero-bg img');
+    if (heroBgImg) heroBgImg.src = url;
+    const prev = document.getElementById('hero-img-preview');
+    if (prev) prev.innerHTML = `<img src="${url}" style="width:100%;height:80px;object-fit:cover;border:1px solid rgba(255,255,255,.1);">`;
+    const inp = document.getElementById('cms-hero-img');
+    if (inp) inp.value = '(uploaded photo)';
+    showToast('Hero image updated!');
+  } catch(e) {
+    showToast('Error uploading: ' + e.message);
+  }
+  input.value = '';
 }
 
 window._previewSlot = 0;
@@ -1879,27 +1966,30 @@ function selectPreviewSlot(i) {
   const inp = document.getElementById('preview-img-upload');
   if (inp) { inp.value = ''; inp.click(); }
 }
-function uploadPreviewImage(input) {
+async function uploadPreviewImage(input) {
   const f = input.files[0];
   if (!f) return;
   const slot = window._previewSlot;
-  showToast('Processing image ' + (slot+1) + '...');
-  compressImage(f, 1200, 0.85).then(url => {
-    try {
-      const cms = getCMS();
-      const imgs = cms.previewImgs || getDefaultPreviewImgs();
-      const labels = ['Family','Newborn','Portrait','Couples','Newborn'];
-      imgs[slot] = {url, label: imgs[slot]?.label || labels[slot] || 'Photo'};
-      saveCMSData({previewImgs: imgs});
-      applyLiveCMS();
-      renderCMSPreviewGrid();
-      showToast('Image ' + (slot+1) + ' updated on homepage!');
-    } catch(e) {
-      showToast('Storage full — try a smaller image');
+  showToast('Saving photo ' + (slot+1) + '...');
+  try {
+    const url = await compressImage(f, 1200, 0.82);
+    const key = 'preview_' + slot;
+    await saveImageIDB(key, url);
+    const defaults = getDefaultPreviewImgs();
+    const keys = LS.get('preview_keys') || {};
+    keys[slot] = {key, label: defaults[slot].label};
+    LS.set('preview_keys', keys);
+    const piEls = document.querySelectorAll('#home-preview-grid .pi');
+    if (piEls[slot]) {
+      const img = piEls[slot].querySelector('img');
+      if (img) img.src = url;
     }
-    // Reset so same file can be re-selected next time
-    input.value = '';
-  }).catch(() => showToast('Error processing image'));
+    renderCMSPreviewGrid();
+    showToast('Photo ' + (slot+1) + ' updated on homepage!');
+  } catch(e) {
+    showToast('Error: ' + (e.message || 'Could not save image'));
+  }
+  input.value = '';
 }
 
 function getDefaultPreviewImgs() {
@@ -1912,14 +2002,19 @@ function getDefaultPreviewImgs() {
   ];
 }
 
-function renderCMSPreviewGrid() {
+async function renderCMSPreviewGrid() {
   const wrap = document.getElementById('cms-preview-grid');
   if (!wrap) return;
-  const cms = getCMS();
-  // Always show all 5 slots, filling unsaved ones with defaults
   const defs = getDefaultPreviewImgs();
-  const saved = cms.previewImgs || [];
-  const imgs = defs.map((def, i) => (saved[i] && saved[i].url) ? saved[i] : def);
+  const keys = LS.get('preview_keys') || {};
+  // Load saved images from IDB, fall back to defaults
+  const imgs = await Promise.all(defs.map(async (def, i) => {
+    if (keys[i] && keys[i].key) {
+      const url = await getImageIDB(keys[i].key);
+      if (url) return {url, label: keys[i].label || def.label};
+    }
+    return def;
+  }));
   wrap.innerHTML = imgs.map((img, i) => `
     <div style="position:relative;cursor:pointer;border:2px solid rgba(255,255,255,.1);border-radius:2px;overflow:hidden;" 
          title="Click to replace photo ${i+1}"
@@ -2008,19 +2103,38 @@ function applyLiveCMS() {
     if (heroBgImg) heroBgImg.src = heroImg;
   }
 
-  // Homepage preview grid — always apply all 5, merge saved with defaults
-  const defaults5 = getDefaultPreviewImgs();
-  const saved5 = cms.previewImgs || [];
-  const merged5 = defaults5.map((def, i) => (saved5[i] && saved5[i].url) ? saved5[i] : def);
-  const piEls = document.querySelectorAll('#home-preview-grid .pi');
-  piEls.forEach((el, i) => {
-    if (merged5[i]) {
-      const img = el.querySelector('img');
-      const lbl = el.querySelector('.pi-label');
-      if (img && img.src !== merged5[i].url) img.src = merged5[i].url;
-      if (lbl) lbl.textContent = merged5[i].label || '';
+  // Homepage preview grid — load from IDB asynchronously
+  (async () => {
+    const defs = getDefaultPreviewImgs();
+    const keys = LS.get('preview_keys') || {};
+    const piEls = document.querySelectorAll('#home-preview-grid .pi');
+    for (let i = 0; i < defs.length; i++) {
+      let src = defs[i].url;
+      let label = defs[i].label;
+      if (keys[i] && keys[i].key) {
+        const saved = await getImageIDB(keys[i].key);
+        if (saved) { src = saved; label = keys[i].label || label; }
+      }
+      if (piEls[i]) {
+        const img = piEls[i].querySelector('img');
+        const lbl = piEls[i].querySelector('.pi-label');
+        if (img) img.src = src;
+        if (lbl) lbl.textContent = label;
+      }
     }
-  });
+  })();
+  // Hero background image — load from IDB
+  if (LS.get('hero_img_set')) {
+    getImageIDB('hero_img').then(url => {
+      if (url) {
+        const heroBgImg = document.querySelector('.hero-bg img');
+        if (heroBgImg) heroBgImg.src = url;
+      }
+    });
+  } else if (cms.heroImg) {
+    const heroBgImg = document.querySelector('.hero-bg img');
+    if (heroBgImg) heroBgImg.src = cms.heroImg;
+  }
 }
 
 function changeAdminPw() {
