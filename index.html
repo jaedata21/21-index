@@ -869,7 +869,7 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
         </div>
         <div class="upload-zone" id="upload-zone-main" onclick="document.getElementById('upload-input-main').click()" ondragover="dzOver(event,'upload-zone-main')" ondragleave="dzLeave('upload-zone-main')" ondrop="dzDrop(event,'main',null)">
           <div class="uz-icon">☁</div>
-          <div class="uz-text"><strong>Click to upload</strong> or drag and drop<br>JPG, PNG, WEBP · Max 10MB each</div>
+          <div class="uz-text"><strong>Click to select photos</strong> or drag and drop<br>JPG, PNG, WEBP · Select 1 to 100+ at once</div>
         </div>
         <input type="file" id="upload-input-main" multiple accept="image/*" style="display:none" onchange="handleUpload(this.files,'main',null)">
         <div class="up-preview" id="upload-preview-main"></div>
@@ -983,11 +983,14 @@ footer{background:#050505;border-top:1px solid rgba(255,255,255,.05);padding:80p
             <label class="form-lbl">Photo Name / Title</label>
             <input class="form-ctrl" id="port-photo-name" placeholder="e.g. Summer Shoot 2024">
           </div>
-          <div class="upload-zone" onclick="document.getElementById('port-photo-upload').click()" style="padding:28px;margin-bottom:12px;">
+          <div class="upload-zone" onclick="document.getElementById('port-photo-upload').click()" 
+               ondragover="dzOver(event,'port-upload-zone')" ondragleave="dzLeave('port-upload-zone')"
+               ondrop="event.preventDefault();dzLeave('port-upload-zone');if(event.dataTransfer.files.length){const inp=document.getElementById('port-photo-upload');inp.files=event.dataTransfer.files;uploadPortfolioPhotos(inp);}"
+               id="port-upload-zone" style="padding:28px;margin-bottom:12px;">
             <div class="uz-icon">📸</div>
-            <div class="uz-text"><strong>Click to upload portfolio photo</strong><br>JPG, PNG · Will be compressed automatically</div>
+            <div class="uz-text"><strong>Click to upload</strong> or drag and drop<br>Select 1 or 20+ photos at once · JPG, PNG</div>
           </div>
-          <input type="file" id="port-photo-upload" accept="image/*" style="display:none" onchange="uploadPortfolioPhoto(this)">
+          <input type="file" id="port-photo-upload" multiple accept="image/*" style="display:none" onchange="uploadPortfolioPhotos(this)">
           <div id="portfolio-cms-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:8px;"></div>
           <p style="font-size:.52rem;color:rgba(245,243,239,.25);margin-top:12px;letter-spacing:.1em;">Hover a photo and click ✕ to remove it from the portfolio</p>
         </div>
@@ -1712,16 +1715,27 @@ function deletePhoto(galId, photoId) {
 const uploadBuffers = {main: []};
 
 function compressImage(file, maxW, quality) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
+    // Warn if file is extremely large (>25MB)
+    if (file.size > 25 * 1024 * 1024) {
+      showToast('Large file detected (' + (file.size/1024/1024).toFixed(1) + 'MB) — processing...');
+    }
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file'));
     reader.onload = ev => {
       const img = new Image();
+      img.onerror = () => reject(new Error('Could not load image'));
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width, h = img.height;
+        // Only downscale — never upscale
         if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
         canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const ctx = canvas.getContext('2d');
+        // White background for transparency
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.src = ev.target.result;
@@ -1733,38 +1747,55 @@ function compressImage(file, maxW, quality) {
 async function handleUpload(files, context, galId) {
   const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
   if (!arr.length) { showToast('Please select image files only'); return; }
-  showToast('Processing ' + arr.length + ' image(s)...');
 
-  for (const f of arr) {
-    try {
-      const url = await compressImage(f, 1600, 0.82);
-      const id = 'ph' + Date.now() + Math.random().toString(36).substr(2,6);
-      const photo = {id, url};
+  let done = 0;
+  const total = arr.length;
+  showToast('Starting upload: ' + total + ' photo' + (total > 1 ? 's' : '') + '...');
 
-      if (context === 'main') {
-        // Save image to IDB, store key reference
+  // For gallery edit — collect all then save once
+  const newPhotos = [];
+
+  // Process in parallel batches of 4
+  const batchSize = 4;
+  for (let i = 0; i < arr.length; i += batchSize) {
+    const batch = arr.slice(i, i + batchSize);
+    await Promise.all(batch.map(async f => {
+      try {
+        const url = await compressImage(f, 2400, 0.93);
+        const id = 'ph' + Date.now() + Math.random().toString(36).substr(2,6);
         const idbKey = 'gal_img_' + id;
         await saveImageIDB(idbKey, url);
-        uploadBuffers.main.push({id, url, idbKey});
-        renderUploadPreviewMain();
-      } else if (context === 'edit' && galId) {
-        const idbKey = 'gal_img_' + id;
-        await saveImageIDB(idbKey, url);
-        const gals = getGalleries();
-        const g = gals.find(x => x.id === galId);
-        if (g) {
-          g.photos.push({id, url, idbKey});
-          if (!g.cover) g.cover = url;
-          saveGalleries(gals);
-          showToast('Photo added!');
-          openEditGallery(galId);
+        const photo = {id, url, idbKey};
+
+        if (context === 'main') {
+          uploadBuffers.main.push(photo);
+        } else {
+          newPhotos.push(photo);
         }
+        done++;
+        showToast(done + ' / ' + total + ' uploaded...');
+      } catch(e) {
+        showToast('Skipped one image — try a different format');
       }
-    } catch(e) {
-      showToast('Error processing ' + f.name);
+    }));
+    // Refresh preview after each batch
+    if (context === 'main') renderUploadPreviewMain();
+  }
+
+  if (context === 'main') {
+    renderUploadPreviewMain();
+    showToast('✓ ' + done + ' photo' + (done !== 1 ? 's' : '') + ' ready — click "Save Photos to Gallery"');
+  } else if (context === 'edit' && galId && newPhotos.length) {
+    const gals = getGalleries();
+    const g = gals.find(x => x.id === galId);
+    if (g) {
+      g.photos.push(...newPhotos);
+      if (!g.cover) g.cover = newPhotos[0].url;
+      saveGalleries(gals);
+      openEditGallery(galId);
+      showToast('✓ ' + done + ' photo' + (done !== 1 ? 's' : '') + ' added to gallery!');
     }
   }
-  if (context === 'main') showToast(arr.length + ' photo(s) ready to save');
 }
 
 function renderUploadPreviewMain() {
@@ -1877,6 +1908,55 @@ function savePortfolioPhotos(photos) {
   LS.set('portfolio_photos', photos);
 }
 
+async function uploadPortfolioPhotos(input) {
+  const files = Array.from(input.files).filter(f => f.type.startsWith('image/'));
+  if (!files.length) return;
+  const cat = document.getElementById('port-cat-select').value;
+  const baseName = document.getElementById('port-photo-name').value.trim();
+  const label = cat.charAt(0).toUpperCase() + cat.slice(1);
+  showToast('Uploading ' + files.length + ' photo' + (files.length > 1 ? 's' : '') + '...');
+
+  let done = 0;
+  const photos = getPortfolioPhotos();
+
+  // Process in parallel batches of 4 for speed
+  const batchSize = 4;
+  for (let i = 0; i < files.length; i += batchSize) {
+    const batch = files.slice(i, i + batchSize);
+    await Promise.all(batch.map(async (f, bi) => {
+      try {
+        const url = await compressImage(f, 2400, 0.93);
+        const id = 'pp' + Date.now() + Math.random().toString(36).substr(2,5);
+        const idbKey = 'port_' + id;
+        await saveImageIDB(idbKey, url);
+        const name = baseName
+          ? (files.length > 1 ? baseName + ' ' + (i + bi + 1) : baseName)
+          : label + ' ' + (photos.length + done + 1);
+        photos.push({ id, idbKey, cat, name, addedAt: new Date().toISOString().split('T')[0] });
+        done++;
+        showToast(done + ' of ' + files.length + ' uploaded...');
+      } catch(e) {
+        showToast('Error on one image — skipping');
+      }
+    }));
+  }
+
+  try {
+    savePortfolioPhotos(photos);
+    renderPortfolioCMSGrid();
+    if (currentPage === 'portfolio') renderPortfolio();
+    showToast('✓ ' + done + ' photo' + (done > 1 ? 's' : '') + ' added to portfolio!');
+  } catch(e) {
+    showToast('Error saving — storage may be full');
+  }
+  input.value = '';
+  document.getElementById('port-photo-name').value = '';
+}
+
+async function uploadPortfolioPhoto(input) {
+  return uploadPortfolioPhotos(input);
+}
+
 async function uploadPortfolioPhoto(input) {
   const f = input.files[0];
   if (!f) return;
@@ -1884,7 +1964,7 @@ async function uploadPortfolioPhoto(input) {
   const name = document.getElementById('port-photo-name').value.trim() || cat.charAt(0).toUpperCase()+cat.slice(1)+' Photo';
   showToast('Saving portfolio photo...');
   try {
-    const url = await compressImage(f, 1100, 0.83);
+    const url = await compressImage(f, 2400, 0.93);
     const id = 'pp' + Date.now();
     await saveImageIDB('port_' + id, url);
     // Save metadata (no image data) to LS
