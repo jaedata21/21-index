@@ -1749,43 +1749,40 @@ async function handleUpload(files, context, galId) {
   if (!arr.length) { showToast('Please select image files only'); return; }
 
   let done = 0;
+  let failed = 0;
   const total = arr.length;
-  showToast('Starting upload: ' + total + ' photo' + (total > 1 ? 's' : '') + '...');
-
-  // For gallery edit — collect all then save once
   const newPhotos = [];
 
-  // Process in parallel batches of 4
-  const batchSize = 4;
-  for (let i = 0; i < arr.length; i += batchSize) {
-    const batch = arr.slice(i, i + batchSize);
-    await Promise.all(batch.map(async f => {
-      try {
-        const url = await compressImage(f, 2400, 0.93);
-        const id = 'ph' + Date.now() + Math.random().toString(36).substr(2,6);
-        const idbKey = 'gal_img_' + id;
-        await saveImageIDB(idbKey, url);
-        const photo = {id, url, idbKey};
+  for (let i = 0; i < arr.length; i++) {
+    const f = arr[i];
+    showToast('Processing ' + (i + 1) + ' of ' + total + ': ' + (f.name || 'image') + '...');
+    try {
+      // Compress — use lower res for speed on bulk, full res for single
+      const maxW = total > 10 ? 1800 : 2400;
+      const url = await compressImage(f, maxW, 0.90);
 
-        if (context === 'main') {
-          uploadBuffers.main.push(photo);
-        } else {
-          newPhotos.push(photo);
-        }
-        done++;
-        showToast(done + ' / ' + total + ' uploaded...');
-      } catch(e) {
-        showToast('Skipped one image — try a different format');
+      const id = 'ph' + Date.now() + '_' + i;
+      const idbKey = 'gal_img_' + id;
+      const saved = await saveImageIDB(idbKey, url);
+      if (!saved) throw new Error('IDB save failed');
+
+      const photo = {id, idbKey, url};
+      if (context === 'main') {
+        uploadBuffers.main.push(photo);
+        // Show running preview every image
+        renderUploadPreviewMain();
+      } else {
+        newPhotos.push(photo);
       }
-    }));
-    // Refresh preview after each batch
-    if (context === 'main') renderUploadPreviewMain();
+      done++;
+    } catch(e) {
+      console.error('Upload error on', f.name, e);
+      failed++;
+    }
   }
 
-  if (context === 'main') {
-    renderUploadPreviewMain();
-    showToast('✓ ' + done + ' photo' + (done !== 1 ? 's' : '') + ' ready — click "Save Photos to Gallery"');
-  } else if (context === 'edit' && galId && newPhotos.length) {
+  // Final save for gallery edit context
+  if (context === 'edit' && galId && newPhotos.length) {
     const gals = getGalleries();
     const g = gals.find(x => x.id === galId);
     if (g) {
@@ -1793,9 +1790,15 @@ async function handleUpload(files, context, galId) {
       if (!g.cover) g.cover = newPhotos[0].url;
       saveGalleries(gals);
       openEditGallery(galId);
-      showToast('✓ ' + done + ' photo' + (done !== 1 ? 's' : '') + ' added to gallery!');
     }
   }
+
+  if (context === 'main') renderUploadPreviewMain();
+
+  const msg = done > 0
+    ? '✓ ' + done + ' photo' + (done !== 1 ? 's' : '') + ' uploaded!' + (failed > 0 ? ' (' + failed + ' failed)' : '')
+    : '✗ No photos uploaded — check file formats';
+  showToast(msg);
 }
 
 function renderUploadPreviewMain() {
@@ -1911,46 +1914,53 @@ function savePortfolioPhotos(photos) {
 async function uploadPortfolioPhotos(input) {
   const files = Array.from(input.files).filter(f => f.type.startsWith('image/'));
   if (!files.length) return;
-  const cat = document.getElementById('port-cat-select').value;
-  const baseName = document.getElementById('port-photo-name').value.trim();
+  const cat = document.getElementById('port-cat-select')?.value || 'family';
+  const baseName = document.getElementById('port-photo-name')?.value.trim() || '';
   const label = cat.charAt(0).toUpperCase() + cat.slice(1);
-  showToast('Uploading ' + files.length + ' photo' + (files.length > 1 ? 's' : '') + '...');
-
+  const total = files.length;
   let done = 0;
+  let failed = 0;
   const photos = getPortfolioPhotos();
+  const startCount = photos.length;
 
-  // Process in parallel batches of 4 for speed
-  const batchSize = 4;
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    await Promise.all(batch.map(async (f, bi) => {
-      try {
-        const url = await compressImage(f, 2400, 0.93);
-        const id = 'pp' + Date.now() + Math.random().toString(36).substr(2,5);
-        const idbKey = 'port_' + id;
-        await saveImageIDB(idbKey, url);
-        const name = baseName
-          ? (files.length > 1 ? baseName + ' ' + (i + bi + 1) : baseName)
-          : label + ' ' + (photos.length + done + 1);
-        photos.push({ id, idbKey, cat, name, addedAt: new Date().toISOString().split('T')[0] });
-        done++;
-        showToast(done + ' of ' + files.length + ' uploaded...');
-      } catch(e) {
-        showToast('Error on one image — skipping');
-      }
-    }));
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    showToast('Processing ' + (i + 1) + ' of ' + total + ': ' + (f.name || 'photo') + '...');
+    try {
+      const maxW = total > 10 ? 1800 : 2400;
+      const url = await compressImage(f, maxW, 0.90);
+      const id = 'pp' + Date.now() + '_' + i;
+      const idbKey = 'port_' + id;
+      const saved = await saveImageIDB(idbKey, url);
+      if (!saved) throw new Error('IDB save failed');
+      const name = baseName
+        ? (total > 1 ? baseName + ' ' + (i + 1) : baseName)
+        : label + ' ' + (startCount + done + 1);
+      photos.push({ id, idbKey, cat, name, addedAt: new Date().toISOString().split('T')[0] });
+      done++;
+    } catch(e) {
+      console.error('Portfolio upload error:', f.name, e);
+      failed++;
+    }
   }
 
-  try {
-    savePortfolioPhotos(photos);
-    renderPortfolioCMSGrid();
-    if (currentPage === 'portfolio') renderPortfolio();
-    showToast('✓ ' + done + ' photo' + (done > 1 ? 's' : '') + ' added to portfolio!');
-  } catch(e) {
-    showToast('Error saving — storage may be full');
+  if (done > 0) {
+    try {
+      savePortfolioPhotos(photos);
+      renderPortfolioCMSGrid();
+      if (currentPage === 'portfolio') renderPortfolio();
+    } catch(e) {
+      showToast('Error saving metadata — but images are stored');
+    }
   }
+
+  const msg = done > 0
+    ? '✓ ' + done + ' photo' + (done > 1 ? 's' : '') + ' added!' + (failed > 0 ? ' (' + failed + ' failed)' : '')
+    : '✗ Upload failed — check console for details';
+  showToast(msg);
   input.value = '';
-  document.getElementById('port-photo-name').value = '';
+  const nameEl = document.getElementById('port-photo-name');
+  if (nameEl) nameEl.value = '';
 }
 
 async function uploadPortfolioPhoto(input) {
