@@ -1,0 +1,39 @@
+{
+  "siteSettings": {
+      "title": "My CMS",
+      "description": "Content Management System",
+      "url": "https://www.my-cms.com"
+  },
+  "heroContent": {
+      "headline": "Welcome to My CMS!",
+      "subheadline": "Your content, organized effortlessly.",
+      "imageUrl": "https://www.my-cms.com/images/hero.jpg"
+  },
+  "stats": {
+      "totalPosts": 150,
+      "totalUsers": 200,
+      "totalSessions": 5000
+  },
+  "sessions": [
+      {
+          "sessionId": "session1",
+          "duration": "30m",
+          "userId": "user123"
+      },
+      {
+          "sessionId": "session2",
+          "duration": "45m",
+          "userId": "user456"
+      }
+  ],
+  "categories": [
+      { "name": "Tech", "description": "Latest in technology" },
+      { "name": "Sports", "description": "All about sports" },
+      { "name": "Health", "description": "Health and wellness tips" }
+  ],
+  "contact": {
+      "email": "contact@my-cms.com",
+      "phone": "+1 234 567 890",
+      "address": "123 CMS St., Content City, CC 12345"
+  }
+}
